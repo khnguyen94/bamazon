@@ -1,25 +1,28 @@
 // Import any libraries needed as variables
-var mysql = require("mysql");
-// var inquirer = require("inquirer");
+var mysql = require("mysql"); // for mysql database access and manipulation
+var inquirer = require("inquirer"); // for obtaining user input
+var fs = require("fs"); // for reading and writing to files
 
 // Establish connection with local mysql database
 var connection = mysql.createConnection({
-    host: "localhost",
-  
-    // Your port; if not 3306
-    port: 3306,
-  
-    // Your username
-    user: "root",
-  
-    // Your password
-    password: "frankocean",
-    database: "bamazon_DB"
-  });
+  host: "localhost",
+
+  // Your port; if not 3306
+  port: 3306,
+
+  // Your username
+  user: "root",
+
+  // Your password
+  password: "frankocean",
+  database: "bamazon_DB"
+});
 
 // Establish all global variables
+var nodePath = process.argv[0];
+var filePath = process.argv[0];
 
-// Create a function for the user to add new items to the database
+// Create a function add new items to the database
 function addProduct(itemName, itemPrice, itemQuant) {
   console.log("Creating a new product...\n");
   var query = connection.query(
@@ -36,9 +39,6 @@ function addProduct(itemName, itemPrice, itemQuant) {
       //   updateProduct();
     }
   );
-
-  // logs the actual query being run
-  console.log(query.sql);
 }
 
 // Create a new itemInterest constructor function to be use in the grabItemPrice funciton
@@ -51,10 +51,11 @@ function newItemOfInterest(id, name, price, quantity) {
   return this;
 }
 
-function grabItem(itemID) {
+function grabItem(item_ID) {
   console.log("Selecting product...\n");
 
-  connection.query("SELECT * FROM products WHERE ?", [{ id: itemID }], function(
+  let itemInterest;
+  connection.query("SELECT * FROM products WHERE ?", [{ id: item_ID }], function(
     err,
     res
   ) {
@@ -63,27 +64,20 @@ function grabItem(itemID) {
     // console.log(res);
 
     // Obtain the id, name, price, and quantity of the item of interest
-    var itemID = res[0].id;
-    var itemPrice = res[0].price;
-    var itemName = res[0].item_name;
-    var itemQuant = res[0].quantity;
+    var id = res[0].id;
+    var price = res[0].price;
+    var name = res[0].item_name;
+    var quant = res[0].quantity;
 
     // Create an new object that holds these name and price
-    var itemInterest = new newItemOfInterest(
-      itemID,
-      itemName,
-      itemPrice,
-      itemQuant
-    );
+    itemInterest = new newItemOfInterest(id, price, name, quant);
 
     // console.log(itemInterest);
 
     // Return itemInterest from this function
-    return itemInterest;
   });
-}
+};
 
-grabItem(1);
 
 function buyItem(itemID, userPurchasePrice, userPurchaseAmount) {
   // Grab the item being bidded on
@@ -117,6 +111,54 @@ function buyItem(itemID, userPurchasePrice, userPurchaseAmount) {
   //       connection.end();
   //     }
   //   );
+};
+
+buyItem(1);
+
+// Create a banking application for the User's account
+function bank() {
+  // Create a deposit function
+  // Create a withdraw function
+  // Create a print total function
+  function total() {
+    fs.readFile("bank.txt", "utf8", function(err, data) {
+      if (err) {
+        return console.log(err);
+      }
+
+      // Break down all the numbers inside the file
+      data = data.split(", ");
+      var result = 0;
+    });
+  }
+
+  // Create a  switch-case will direct which function gets run.
+  switch (action) {
+    case "total":
+      total();
+      break;
+
+    case "deposit":
+      deposit();
+      break;
+
+    case "withdraw":
+      withdraw();
+      break;
+
+    case "lotto":
+      lotto();
+      break;
+  }
 }
 
-buyItem(grabItem(1), 3);
+// // Create event listener for when user makes a new purchase
+// $("#new-purchase-button").on("click", function(event) {
+//   // Prevent page refresh/reload
+//   event.preventDefault();
+
+//   // Run buyItem function on the item and quantity
+//   buyItem();
+
+//   //
+// });
