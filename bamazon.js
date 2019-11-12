@@ -1,26 +1,181 @@
 // Import any libraries needed as variables
-var mysql = require("mysql"); // for mysql database access and manipulation
 var inquirer = require("inquirer"); // for obtaining user input
-var fs = require("fs"); // for reading and writing to files
+var consoleTable = require("console.table");
+var connectDB = require("./database"); // for connection to database
 
-// Establish connection with local mysql database
-var connection = mysql.createConnection({
-  host: "localhost",
+// Create any global variables
+var connection = connectDB();
 
-  // Your port; if not 3306
-  port: 3306,
+// Create a runStore function takes an response from the user via use of inquirer
+function runStore(connection) {
+  console.log("Welcome to Bamazon! We are the premier e-commerce website.");
 
-  // Your username
-  user: "root",
+  inquirer
+    .prompt({
+      name: "action",
+      type: "list",
+      message: "Access the shop as a: ",
+      choices: ["Shopper", "Manager", "Exit"]
+    })
+    .then(function(answer) {
+      switch (answer.action) {
+        case "Shopper":
+          // run shopper script
+          readDB(connection);
+          break;
 
-  // Your password
-  password: "frankocean",
-  database: "bamazon_DB"
-});
+        case "Manager":
+          // run manager script
+          runManager(connection);
+          break;
 
-// Establish all global variables
-var nodePath = process.argv[0];
-var filePath = process.argv[0];
+        case "Exit":
+          connection.end();
+          break;
+      }
+    });
+}
+
+// Create a function that reads the database and prints to the terminal
+function readDB(connection) {
+  // SELECT
+  query = "SELECT * FROM products";
+
+  connection.query(query, function(err, res) {
+    if (err) throw err;
+
+    // Print everything to the terminal
+    console.table(res);
+
+    // Prompt the user to for their input
+    promptUserOrder(connection);
+  });
+}
+
+// Create a function that prompts the user for their order
+function promptUserOrder(connection) {
+  inquirer
+    .prompt([
+      {
+        name: "item_id",
+        type: "input",
+        message:
+          "Please enter the item ID of the product you would like to buy."
+      },
+      {
+        name: "quantity",
+        type: "input",
+        message: "Please enter the quantity you would like to buy."
+      }
+    ])
+    .then(function(res) {
+      // Run the checkStock function, pass through: connection, res.item_ID, and res.quantity
+      checkItemStock(connection, res.item_id, parseInt(res.quantity));
+    });
+}
+
+// Create a function that checks the stock of an item using its itemID
+function checkItemStock(connection, item_id, buy_quantity) {
+  query = "SELECT * FROM products WHERE ?";
+
+  connection.query(query, { id: item_id }, function(err, res) {
+    if (err) throw err;
+
+    // console.log(res);
+    // console.log(res[0]);
+
+    if (parseInt(res[0].quantity) < buy_quantity) {
+      console.log("There isnt enough of this item in stock.");
+      // Prompt the user for purchase input again
+    } else {
+      // Process their order and run the updateProduct function
+      updateProduct(connection, item_id, buy_quantity);
+    }
+  });
+}
+
+// Create a function that processes any successful order and updates the database
+function updateProduct(connection, item_id, buy_quantity) {
+  query = "UPDATE products SET ? WHERE ?";
+
+  params = [{ stock_quantity: (stock_quantity - parseInt(buy_quantity)) }, { id: item_id }];
+
+  connection.query(query, params, function(err, res) {
+    if (err) throw err;
+
+    // Run the updateCart function
+    updateCart(connection, item_ID, buy_quantity);
+  });
+}
+
+// Create a function that updates the user's cart with their order
+function updateCart(connection, item_id, buy_quantity) {
+  query =
+    "SELECT item_name as 'Product', price as 'Price/Item', price * buy_quantity as 'Total' FROM products WHERE ?";
+
+  params = [{ item_id: item_ID }];
+
+  connection.query(query, params, function() {
+    if (err) throw err;
+
+    console.log("Your Cart: \n");
+    console.log(res);
+
+    // Run the updateSales function
+    updateSales(connection, item_id, buy_quantity);
+  });
+}
+
+// Create a function that updates the item sales in the database
+function updateSales(connection, item_id, buy_quantity) {
+  query = "UPDATE products SET ";
+
+  params = [];
+
+  connection.query(query, params, function(err, res) {
+    if (err) throw err;
+
+    return;
+  });
+}
+
+// Initiate the program by running readDB
+runStore(connection);
+
+// Based on what action user selects then run that function
+function buyClothing() {
+  inquirer
+    .prompt(
+      {
+        name: "item",
+        type: "input",
+        message: "What item of clothing would you like to buy?"
+      },
+      {
+        name: "quantity",
+        type: "input",
+        message: "How many would you like to buy?"
+      }
+    )
+    .then(function(answer) {
+      var query = "UPDATE products SET ? WHERE ?";
+
+      connection.query(
+        query,
+        [{ quantity: answer.quantity }, { item_name: answer.item_name }],
+        function(err, res) {
+          // If there is enough stock (quantity) then update the table
+          if (res.quantity < answer.quantity) {
+            console.log("There is not enough of this item in stock!");
+          } else {
+          }
+        }
+      );
+    });
+}
+
+// Create a function to update items in the database
+function updateItem() {}
 
 // Create a function add new items to the database
 function addProduct(itemName, itemPrice, itemQuant) {
@@ -51,17 +206,14 @@ function newItemOfInterest(id, name, price, quantity) {
   return this;
 }
 
-function grabItem(item_ID) {
+function buyItem(itemID, userPurchaseQuantity) {
   console.log("Selecting product...\n");
 
-  let itemInterest;
-  connection.query("SELECT * FROM products WHERE ?", [{ id: item_ID }], function(
+  connection.query("SELECT * FROM products WHERE ?", [{ id: itemID }], function(
     err,
     res
   ) {
     if (err) throw err;
-
-    // console.log(res);
 
     // Obtain the id, name, price, and quantity of the item of interest
     var id = res[0].id;
@@ -70,50 +222,43 @@ function grabItem(item_ID) {
     var quant = res[0].quantity;
 
     // Create an new object that holds these name and price
-    itemInterest = new newItemOfInterest(id, price, name, quant);
+    var itemInterest = new newItemOfInterest(id, price, name, quant);
 
-    // console.log(itemInterest);
+    console.log(itemInterest);
 
-    // Return itemInterest from this function
+    // Call the buyItem function
+    updateItem(itemID, itemInterest);
   });
-};
+}
 
-
-function buyItem(itemID, userPurchasePrice, userPurchaseAmount) {
-  // Grab the item being bidded on
-  var item = grabItem(itemID);
-
-  console.log(item);
-
-  //   console.log("Bidding on item: \n" + bidItem.price);
-  //   console.log("Current Price: " + bidItem.price);
+function updateItem(itemID, userPurchaseQuantity) {
+  console.log("Bidding on item: \n");
+  console.log("Current Price: ");
 
   // Log all results of the SELECT statement
-  //   if (userBid > bidItem.price) {
-  //     console.log("Sorry, your bid is too low.");
-  //   } else {
-  //     bidProduct(itemID, itemPrice);
-  //   }
-
-  //   var query = connection.query(
-  //     "UPDATE products SET ? WHERE ?",
-  //     [
-  //       {
-  //         price: userBid
-  //       },
-  //       {
-  //         id: itemID
-  //       }
-  //     ],
-  //     function(err, res) {
-  //       if (err) throw err;
-  //       console.log(res.affectedRows + " products updated!\n");
-  //       connection.end();
+  // if (userBid > bidItem.price) {
+  //   // console.log("Sorry, your bid is too low.");
+  // } else {
+  //   bidProduct(itemID, itemPrice);
+  // }
+  // var query = connection.query(
+  //   "UPDATE products SET ? WHERE ?",
+  //   [
+  //     {
+  //       price: userBid
+  //     },
+  //     {
+  //       id: itemID
   //     }
-  //   );
-};
-
-buyItem(1);
+  //   ],
+  //   function(err, res) {
+  //     console.log("res buy item");
+  //     if (err) throw err;
+  //     console.log(res.affectedRows + " products updated!\n");
+  //     connection.end();
+  //   }
+  // );
+}
 
 // Create a banking application for the User's account
 function bank() {
@@ -152,7 +297,7 @@ function bank() {
   }
 }
 
-// // Create event listener for when user makes a new purchase
+// Create an on-click event that will capture and store the user's input for a new purchase
 // $("#new-purchase-button").on("click", function(event) {
 //   // Prevent page refresh/reload
 //   event.preventDefault();
