@@ -1,6 +1,7 @@
 // Import any libraries needed as variables
 var inquirer = require("inquirer"); // for obtaining user input
-var connectDB = require("./database"); // for connection to database
+var connectDB = require("./database.js"); // for connection to database
+var connectMNG = require("./bamazonMNG.js"); // for connection to manager functions
 
 // Create any global variables
 var connection = connectDB();
@@ -25,11 +26,11 @@ function runStore(connection) {
 
         case "Manager":
           // run manager script
-          runManager(connection);
+          connectMNG(connection);
           break;
 
         case "Exit":
-          console.log("Exiting the Bamazon. Bye!");
+          console.log("Exiting Bamazon. Bye!");
           connection.end();
           break;
       }
