@@ -20,7 +20,7 @@ function connectDB() {
   // Connect to the server and then create a runStore function
   connection.connect(function(err) {
     if (err) throw err;
-    console.log("Connected to Bamazon Database!");
+    // console.log("Connected to Bamazon Database!");
   });
 
   return connection;
