@@ -59,7 +59,7 @@ function promptMNGAction(connection) {
 
         case "View product sales":
           // run viewProductSales script
-          viewProductSales(connection);
+          promptViewProductSales(connection);
           break;
 
         case "Exit":
@@ -383,12 +383,11 @@ function promptViewProductSales(connection) {
   inquirer.prompt(
     {
       name: "view_department",
-      type: "list",
-      message: "Which department would you like to view sales data for?",
-      choices: ["Clothing", "Electonics", "Produce", "Furniture"]
+      type: "input",
+      message: "View sales data for which department?"
     }
   ).then(function(answer) {
-    console.log(answer.view_department);
+    // console.log(answer.view_department);
 
     // Run retrieveSalesDate on that department
     retrieveSalesDate(connection, answer.view_department);
